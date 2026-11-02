@@ -24,7 +24,7 @@ helm repo add confluentinc https://packages.confluent.io/helm
 helm dependency build charts/confluent-operators
 ```
 
-Keep the prerequisites table, `check`, and the script in sync when adding a dependency (tool, image registry, chart repo, manifest URL).
+Keep the prerequisites table, `check`, and the script in sync when adding a dependency (tool, image registry, chart repo, manifest URL). Every container image and version change updates [doc/images.md](doc/images.md).
 
 ## Build, test, and lint
 

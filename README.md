@@ -52,7 +52,7 @@ local/cp-local-cluster.sh vscode                                # VS Code Conflu
 local/cp-local-cluster.sh test                                  # both e2e tests
 ```
 
-Details: [architecture](doc/architecture.md), [local test cluster](doc/local-cluster.md), [operators](doc/confluent-operators-chart.md), [platform instances](doc/confluent-platform-chart.md), [Flink](doc/flink.md), [SQL Gateway](doc/sql-gateway.md).
+Details: [architecture](doc/architecture.md), [local test cluster](doc/local-cluster.md), [operators](doc/confluent-operators-chart.md), [platform instances](doc/confluent-platform-chart.md), [Flink](doc/flink.md), [SQL Gateway](doc/sql-gateway.md), [images and versions](doc/images.md).
 
 ## Development
 
