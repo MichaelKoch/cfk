@@ -1,0 +1,31 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: platform.confluent.io/v1beta1
+kind: Kafka
+metadata:
+  name: kafka
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.kafka.replicas }}
+  dataVolumeCapacity: {{ .Values.kafka.dataVolumeCapacity }}
+  {{- include "cp.image" (dict "root" . "name" "cp-server") | nindent 2 }}
+  {{- include "cp.common" (dict "root" . "component" .Values.kafka) | nindent 2 }}
+  {{- with .Values.platform.externalHost }}
+  listeners:
+    external:
+      externalAccess:
+        type: nodePort
+        nodePort:
+          host: {{ . }}
+          nodePortOffset: {{ $.Values.kafka.externalNodePortOffset }}
+  {{- end }}
+  {{- with .Values.kafka.configOverrides }}
+  configOverrides:
+    server:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
+  dependencies:
+    kRaftController:
+      clusterRef:
+        name: kraftcontroller
+    {{- include "cp.metricsClient" . | nindent 4 }}
+{{- end }}

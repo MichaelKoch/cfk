@@ -1,0 +1,22 @@
+Confluent Platform {{ .Values.platform.version }} is being deployed to namespace "{{ .Release.Namespace }}".
+
+Watch the rollout (takes several minutes):
+  kubectl get pods -n {{ .Release.Namespace }} -w
+  kubectl get confluent -n {{ .Release.Namespace }}
+{{- if .Values.controlCenter.enabled }}
+
+Open Control Center:
+  kubectl port-forward -n {{ .Release.Namespace }} controlcenter-0 9021:9021
+  then browse http://localhost:9021
+{{- end }}
+{{- if .Values.flink.enabled }}
+
+Flink (via CMF):
+  kubectl get flinkenvironment,flinkapplication,flinkdeployment -n {{ .Release.Namespace }}
+{{- end }}
+{{- if .Values.sqlGateway.enabled }}
+
+Flink SQL Gateway (session cluster sql-gateway-session):
+  kubectl port-forward -n {{ .Release.Namespace }} svc/sql-gateway 8083:8083
+  curl localhost:8083/v1/info
+{{- end }}

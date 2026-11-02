@@ -1,0 +1,7 @@
+{
+  "name": "cp-local (cfk-local)",
+  "type": "DIRECT",
+  "formConnectionType": "Confluent Platform",
+  "kafka_cluster": { "bootstrap_servers": "192.168.49.2:30000", "ssl": { "enabled": false } },
+  "schema_registry": { "uri": "http://192.168.49.2:30081", "ssl": { "enabled": false } }
+}

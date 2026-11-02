@@ -1,0 +1,121 @@
+# Namespace of the confluent-operators release (CFK, Flink operator, CMF).
+# The release namespace of this chart must be in that chart's instanceNamespaces.
+operatorNamespace: confluent-operator
+
+# Shared settings for all Confluent Platform components.
+platform:
+  version: 8.2.4
+  initImage: confluentinc/confluent-init-container:3.3.1
+  storageClass: local-path # node-local volumes; minikube "standard" breaks on multi-node
+  # Node IP/hostname for NodePort access from outside the cluster (Kafka external listener, Schema Registry).
+  # Empty = in-cluster only.
+  externalHost: ""
+
+kraftController:
+  enabled: true
+  replicas: 1
+  dataVolumeCapacity: 5Gi
+  resources:
+    requests: { cpu: 250m, memory: 768Mi }
+
+kafka:
+  enabled: true
+  # 3 brokers match the default replication factor 3 of internal topics.
+  replicas: 3
+  dataVolumeCapacity: 10Gi
+  resources:
+    requests: { cpu: 250m, memory: 1Gi }
+  externalNodePortOffset: 30000 # with platform.externalHost: bootstrap <host>:30000, broker N on 30001+N
+  # Extra broker properties (server.properties lines), e.g. replication factor 1 for a single broker.
+  configOverrides: []
+
+schemaRegistry:
+  enabled: true
+  replicas: 1
+  externalNodePort: 30081 # with platform.externalHost: http://<host>:30081
+  resources:
+    requests: { cpu: 100m, memory: 512Mi }
+
+connect:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: { cpu: 250m, memory: 1Gi }
+
+ksqldb:
+  enabled: true
+  replicas: 1
+  dataVolumeCapacity: 5Gi
+  resources:
+    requests: { cpu: 250m, memory: 1Gi }
+
+kafkaRestProxy:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 512Mi }
+
+# Control Center (next gen) with embedded Prometheus and Alertmanager.
+controlCenter:
+  enabled: true
+  version: 2.6.1
+  dataVolumeCapacity: 5Gi
+  prometheusVolumeCapacity: 5Gi
+  resources:
+    requests: { cpu: 250m, memory: 1Gi }
+  # Extra Control Center properties, e.g. replication factor 1 for its internal topics on a single broker.
+  configOverrides: []
+
+# CFK resources managed through CMF: a CMFRestClass, one FlinkEnvironment and an optional example application.
+flink:
+  enabled: true
+  environment: "" # FlinkEnvironment name, unique across CMF; empty = release namespace. Applications run in the release namespace
+  image: confluentinc/cp-flink:2.1.3-cp3-java21
+  flinkVersion: v2_1
+  exampleApplication:
+    enabled: true
+    name: state-machine
+    jarURI: local:///opt/flink/examples/streaming/StateMachineExample.jar
+    parallelism: 1
+    jobManager:
+      resource: { cpu: 1, memory: 1024m }
+    taskManager:
+      replicas: 1
+      resource: { cpu: 1, memory: 1024m }
+  # Shared Flink SQL registered in CMF (needs Kafka and Schema Registry): catalog -> database -> compute pool.
+  sql:
+    enabled: true
+    catalog: "" # FlinkKafkaCatalog name, unique across CMF; empty = release namespace
+    database: kafka # FlinkKafkaDatabase name (Kafka cluster of this instance)
+    computePool:
+      name: shared
+      image: confluentinc/cp-flink-sql:1.19-cp12
+      flinkVersion: v1_19
+      flinkConfiguration:
+        execution.checkpointing.interval: 10s
+        taskmanager.numberOfTaskSlots: "2"
+      jobManager:
+        resource: { cpu: 1, memory: 1024m }
+      taskManager:
+        resource: { cpu: 1, memory: 1536m }
+
+# Flink SQL Gateway (REST, port 8083) on a dedicated Flink session cluster, managed directly by the
+# Flink operator (not through CMF). Flink 1.19 on cp-flink-sql, the Confluent-supported Flink SQL image
+# (ships the Kafka, upsert-kafka and avro-confluent connectors), same line as CMF Flink SQL (flink.sql).
+# extraJars: optional jar URLs downloaded at pod start into /opt/flink/lib (for images without connectors).
+sqlGateway:
+  enabled: true
+  image: confluentinc/cp-flink-sql:1.19-cp12
+  flinkVersion: v1_19
+  extraJars: []
+  jarLoaderImage: curlimages/curl:8.20.0
+  resources:
+    requests: { cpu: 250m, memory: 1Gi }
+    limits: { memory: 1Gi }
+  session:
+    jobManager:
+      resource: { cpu: 1, memory: 1024m }
+    taskManager:
+      resource: { cpu: 1, memory: 1536m }
+    flinkConfiguration:
+      taskmanager.numberOfTaskSlots: "2"

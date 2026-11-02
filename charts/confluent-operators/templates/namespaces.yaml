@@ -1,0 +1,11 @@
+{{- range .Values.instanceNamespaces }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . }}
+  labels:
+    app.kubernetes.io/part-of: confluent-platform
+  annotations:
+    helm.sh/resource-policy: keep # uninstalling the operators never deletes an instance
+{{- end }}

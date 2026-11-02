@@ -1,0 +1,31 @@
+# Flink SQL e2e step 1: create source and sink tables (topics + Avro schemas).
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkStatement
+metadata:
+  name: e2e-create-in
+spec:
+  flinkEnvironment: __FLINK_ENV__
+  cmfRestClassRef:
+    name: cmf
+  computePoolName: __POOL__
+  properties:
+    sql.current-catalog: __CATALOG__
+    sql.current-database: __DATABASE__
+  statement: >-
+    CREATE TABLE e2e_in (id INT, msg STRING)
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkStatement
+metadata:
+  name: e2e-create-out
+spec:
+  flinkEnvironment: __FLINK_ENV__
+  cmfRestClassRef:
+    name: cmf
+  computePoolName: __POOL__
+  properties:
+    sql.current-catalog: __CATALOG__
+    sql.current-database: __DATABASE__
+  statement: >-
+    CREATE TABLE e2e_out (id INT, msg STRING)

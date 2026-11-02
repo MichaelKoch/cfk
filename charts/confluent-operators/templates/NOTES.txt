@@ -1,0 +1,4 @@
+Operators installed in namespace "{{ .Release.Namespace }}", watching: {{ join ", " .Values.instanceNamespaces }}
+
+Deploy a Confluent Platform instance into one of these namespaces:
+  helm upgrade --install <ns> charts/confluent-platform -n <ns> -f environments/<ns>.yaml

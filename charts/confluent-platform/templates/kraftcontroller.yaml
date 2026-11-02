@@ -1,0 +1,16 @@
+{{- if .Values.kraftController.enabled }}
+apiVersion: platform.confluent.io/v1beta1
+kind: KRaftController
+metadata:
+  name: kraftcontroller
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.kraftController.replicas }}
+  dataVolumeCapacity: {{ .Values.kraftController.dataVolumeCapacity }}
+  {{- include "cp.image" (dict "root" . "name" "cp-server") | nindent 2 }}
+  {{- include "cp.common" (dict "root" . "component" .Values.kraftController) | nindent 2 }}
+  {{- with include "cp.metricsClient" . }}
+  dependencies:
+    {{- . | nindent 4 }}
+  {{- end }}
+{{- end }}

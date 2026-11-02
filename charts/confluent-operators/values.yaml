@@ -1,0 +1,43 @@
+# Instance namespaces: created by this chart and the only namespaces the operators watch.
+# Install one confluent-platform release per namespace. When overriding this list in another
+# values file, also set the three watch lists below (the YAML anchor only works inside this file).
+# The only instance is cp-local in the isolated local cluster (local/cp-local-cluster.sh, doc/local-cluster.md).
+instanceNamespaces: &instanceNamespaces
+  - cp-local
+
+# CFK operator (subchart). Any value of the upstream chart can be set here.
+confluent-for-kubernetes:
+  namespaced: true
+  # Only these namespaces are reconciled. Note: with a namespaceList the upstream chart still binds a ClusterRole.
+  namespaceList: *instanceNamespaces
+  enableFlinkSQL: true # reconcile FlinkKafkaCatalog/-Database, FlinkComputePool and FlinkStatement CRs
+
+# CP Flink Kubernetes Operator (subchart). Creates the "flink" job service account in each
+# watched namespace. Its admission webhook needs cert-manager in the cluster.
+flink-kubernetes-operator:
+  enabled: true
+  watchNamespaces: *instanceNamespaces
+  # Release-specific names for the cluster-scoped RBAC, so it can't clash with another operator install.
+  rbac:
+    operatorRole:
+      name: confluent-flink-operator
+    operatorRoleBinding:
+      name: confluent-flink-operator-role-binding
+  operatorPod:
+    resources:
+      requests: { cpu: 500m, memory: 1Gi }
+      limits: { cpu: 1, memory: 1Gi }
+
+# Extra NodePort Service for the CMF REST API (local tools, confluent CLI); 0 = off.
+cmfNodePort: 0
+
+# Confluent Manager for Apache Flink (subchart), REST API at cmf-service.<release ns>:80.
+# Shared by all instances; runs as a trial without a license.
+confluent-manager-for-apache-flink:
+  enabled: true
+  watchNamespaces: *instanceNamespaces # one Role per namespace instead of a ClusterRole
+  resources:
+    requests: { cpu: 250m, memory: 1Gi }
+    limits: { cpu: 1, memory: 1Gi }
+  persistence:
+    dataVolumeCapacity: 1Gi

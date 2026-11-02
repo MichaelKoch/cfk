@@ -1,0 +1,18 @@
+apiVersion: v2
+name: confluent-operators
+description: Operators for Confluent Platform on Kubernetes (CFK, CP Flink Kubernetes Operator, CMF), watching a fixed list of instance namespaces.
+type: application
+version: 0.1.0
+appVersion: "3.3.1"
+dependencies:
+  - name: confluent-for-kubernetes
+    version: 0.1718.99 # CFK 3.3.1
+    repository: https://packages.confluent.io/helm
+  - name: flink-kubernetes-operator
+    version: 1.150.4 # CP Flink Kubernetes Operator 1.15.0-cp4
+    repository: https://packages.confluent.io/helm
+    condition: flink-kubernetes-operator.enabled
+  - name: confluent-manager-for-apache-flink
+    version: 2.4.4 # CMF 2.4.4
+    repository: https://packages.confluent.io/helm
+    condition: confluent-manager-for-apache-flink.enabled

@@ -1,0 +1,53 @@
+{{- if .Values.flink.enabled }}
+apiVersion: platform.confluent.io/v1beta1
+kind: CMFRestClass
+metadata:
+  name: cmf
+  namespace: {{ .Release.Namespace }}
+spec:
+  cmfRest:
+    endpoint: http://cmf-service.{{ .Values.operatorNamespace }}.svc.cluster.local:80
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkEnvironment
+metadata:
+  name: {{ include "cp.flinkEnvironment" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  kubernetesNamespace: {{ .Release.Namespace }}
+  cmfRestClassRef:
+    name: cmf
+  flinkApplicationDefaults:
+    spec:
+      flinkConfiguration:
+        taskmanager.numberOfTaskSlots: "1"
+{{- with .Values.flink.exampleApplication }}
+{{- if .enabled }}
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkApplication
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  flinkEnvironment: {{ include "cp.flinkEnvironment" $ }}
+  cmfRestClassRef:
+    name: cmf
+  image: {{ $.Values.flink.image }}
+  flinkVersion: {{ $.Values.flink.flinkVersion }}
+  serviceAccount: flink
+  jobManager:
+    resource:
+      {{- toYaml .jobManager.resource | nindent 6 }}
+  taskManager:
+    replicas: {{ .taskManager.replicas }}
+    resource:
+      {{- toYaml .taskManager.resource | nindent 6 }}
+  job:
+    jarURI: {{ .jarURI }}
+    parallelism: {{ .parallelism }}
+    state: running
+    upgradeMode: stateless
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,48 @@
+{{- if .Values.controlCenter.enabled }}
+{{- $c3 := .Values.controlCenter }}
+apiVersion: platform.confluent.io/v1beta1
+kind: ControlCenter
+metadata:
+  name: controlcenter
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  dataVolumeCapacity: {{ $c3.dataVolumeCapacity }}
+  image:
+    application: confluentinc/cp-enterprise-control-center-next-gen:{{ $c3.version }}
+    init: {{ .Values.platform.initImage }}
+  {{- include "cp.common" (dict "root" . "component" $c3) | nindent 2 }}
+  {{- with $c3.configOverrides }}
+  configOverrides:
+    server:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
+  services:
+    prometheus:
+      image: confluentinc/cp-enterprise-prometheus:{{ $c3.version }}
+      pvc:
+        dataVolumeCapacity: {{ $c3.prometheusVolumeCapacity }}
+        storageClass:
+          name: {{ .Values.platform.storageClass }}
+    alertmanager:
+      image: confluentinc/cp-enterprise-alertmanager:{{ $c3.version }}
+  dependencies:
+    prometheusClient:
+      url: {{ include "cp.url" (dict "root" . "name" "controlcenter" "port" 9090) }}
+    alertManagerClient:
+      url: {{ include "cp.url" (dict "root" . "name" "controlcenter" "port" 9093) }}
+    {{- if .Values.schemaRegistry.enabled }}
+    schemaRegistry:
+      url: {{ include "cp.url" (dict "root" . "name" "schemaregistry" "port" 8081) }}
+    {{- end }}
+    {{- if .Values.connect.enabled }}
+    connect:
+      - name: connect
+        url: {{ include "cp.url" (dict "root" . "name" "connect" "port" 8083) }}
+    {{- end }}
+    {{- if .Values.ksqldb.enabled }}
+    ksqldb:
+      - name: ksqldb
+        url: {{ include "cp.url" (dict "root" . "name" "ksqldb" "port" 8088) }}
+    {{- end }}
+{{- end }}

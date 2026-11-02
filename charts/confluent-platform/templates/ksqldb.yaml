@@ -1,0 +1,17 @@
+{{- if .Values.ksqldb.enabled }}
+apiVersion: platform.confluent.io/v1beta1
+kind: KsqlDB
+metadata:
+  name: ksqldb
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.ksqldb.replicas }}
+  dataVolumeCapacity: {{ .Values.ksqldb.dataVolumeCapacity }}
+  {{- include "cp.image" (dict "root" . "name" "cp-ksqldb-server") | nindent 2 }}
+  {{- include "cp.common" (dict "root" . "component" .Values.ksqldb) | nindent 2 }}
+  {{- if .Values.schemaRegistry.enabled }}
+  dependencies:
+    schemaRegistry:
+      url: {{ include "cp.url" (dict "root" . "name" "schemaregistry" "port" 8081) }}
+  {{- end }}
+{{- end }}

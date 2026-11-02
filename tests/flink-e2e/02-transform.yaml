@@ -1,0 +1,16 @@
+# Flink SQL e2e step 2: continuous transform e2e_in -> e2e_out (upper-cased msg).
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkStatement
+metadata:
+  name: e2e-transform
+spec:
+  flinkEnvironment: __FLINK_ENV__
+  cmfRestClassRef:
+    name: cmf
+  computePoolName: __POOL__
+  properties:
+    sql.current-catalog: __CATALOG__
+    sql.current-database: __DATABASE__
+  statement: >-
+    INSERT INTO e2e_out SELECT id, UPPER(msg) AS msg FROM e2e_in

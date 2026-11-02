@@ -1,0 +1,15 @@
+# Operators for the isolated local cluster (local/cp-local-cluster.sh): reduced requests.
+# Watch scope comes from the chart default instanceNamespaces [cp-local].
+flink-kubernetes-operator:
+  operatorPod:
+    resources:
+      requests: { cpu: 100m, memory: 512Mi }
+      limits: { cpu: 1, memory: 1Gi }
+
+# CMF REST API at http://<node-ip>:30080 (local/cp-local-cluster.sh flink)
+cmfNodePort: 30080
+
+confluent-manager-for-apache-flink:
+  resources:
+    requests: { cpu: 100m, memory: 768Mi }
+    limits: { cpu: 1, memory: 1Gi }

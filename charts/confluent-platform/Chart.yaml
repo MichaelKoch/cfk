@@ -1,0 +1,6 @@
+apiVersion: v2
+name: confluent-platform
+description: One KRaft-based Confluent Platform instance (Kafka, SR, Connect, ksqlDB, REST, C3, Flink environment, SQL Gateway) per namespace, sized for minikube. Needs the confluent-operators chart.
+type: application
+version: 0.2.0
+appVersion: "8.2.4"

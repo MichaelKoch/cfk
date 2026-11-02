@@ -1,0 +1,18 @@
+{{- if .Values.connect.enabled }}
+apiVersion: platform.confluent.io/v1beta1
+kind: Connect
+metadata:
+  name: connect
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.connect.replicas }}
+  {{- include "cp.image" (dict "root" . "name" "cp-server-connect") | nindent 2 }}
+  {{- include "cp.common" (dict "root" . "component" .Values.connect) | nindent 2 }}
+  dependencies:
+    kafka:
+      bootstrapEndpoint: kafka:9071
+    {{- if .Values.schemaRegistry.enabled }}
+    schemaRegistry:
+      url: {{ include "cp.url" (dict "root" . "name" "schemaregistry" "port" 8081) }}
+    {{- end }}
+{{- end }}

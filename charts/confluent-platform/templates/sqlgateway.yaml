@@ -1,0 +1,82 @@
+{{- if .Values.sqlGateway.enabled }}
+{{- $gw := .Values.sqlGateway }}
+# Session cluster that runs the jobs submitted through the gateway.
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: sql-gateway-session
+  namespace: {{ .Release.Namespace }}
+spec:
+  image: {{ $gw.image }}
+  flinkVersion: {{ $gw.flinkVersion }}
+  serviceAccount: flink
+  flinkConfiguration:
+    {{- toYaml $gw.session.flinkConfiguration | nindent 4 }}
+  jobManager:
+    resource:
+      {{- toYaml $gw.session.jobManager.resource | nindent 6 }}
+  taskManager:
+    resource:
+      {{- toYaml $gw.session.taskManager.resource | nindent 6 }}
+  {{- if $gw.extraJars }}
+  podTemplate: # JobManager and TaskManagers load the extra jars
+    spec:
+      {{- include "cp.sqlGatewayJars.initContainers" . | nindent 6 }}
+      containers:
+        - name: flink-main-container
+          {{- include "cp.sqlGatewayJars.volumeMounts" . | nindent 10 }}
+      {{- include "cp.sqlGatewayJars.volumes" . | nindent 6 }}
+  {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sql-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: sql-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sql-gateway
+  template:
+    metadata:
+      labels:
+        app: sql-gateway
+    spec:
+      {{- include "cp.sqlGatewayJars.initContainers" . | nindent 6 }}
+      {{- include "cp.sqlGatewayJars.volumes" . | nindent 6 }}
+      containers:
+        - name: sql-gateway
+          image: {{ $gw.image }}
+          command: ["/opt/flink/bin/sql-gateway.sh", "start-foreground"]
+          args:
+            - -Dsql-gateway.endpoint.rest.address=0.0.0.0
+            - -Dsql-gateway.endpoint.rest.port=8083
+            - -Dexecution.target=remote
+            - -Drest.address=sql-gateway-session-rest
+            - -Drest.port=8081
+          ports:
+            - name: rest
+              containerPort: 8083
+          readinessProbe:
+            httpGet: { path: /v1/info, port: rest }
+            periodSeconds: 10
+          resources:
+            {{- toYaml $gw.resources | nindent 12 }}
+          {{- include "cp.sqlGatewayJars.volumeMounts" . | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sql-gateway
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: sql-gateway
+  ports:
+    - name: rest
+      port: 8083
+      targetPort: rest
+{{- end }}

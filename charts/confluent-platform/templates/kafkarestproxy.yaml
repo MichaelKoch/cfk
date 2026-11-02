@@ -1,0 +1,16 @@
+{{- if .Values.kafkaRestProxy.enabled }}
+apiVersion: platform.confluent.io/v1beta1
+kind: KafkaRestProxy
+metadata:
+  name: kafkarestproxy
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.kafkaRestProxy.replicas }}
+  {{- include "cp.image" (dict "root" . "name" "cp-kafka-rest") | nindent 2 }}
+  {{- include "cp.common" (dict "root" . "component" .Values.kafkaRestProxy) | nindent 2 }}
+  {{- if .Values.schemaRegistry.enabled }}
+  dependencies:
+    schemaRegistry:
+      url: {{ include "cp.url" (dict "root" . "name" "schemaregistry" "port" 8081) }}
+  {{- end }}
+{{- end }}

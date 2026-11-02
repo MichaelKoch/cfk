@@ -1,0 +1,18 @@
+{{- if .Values.schemaRegistry.enabled }}
+apiVersion: platform.confluent.io/v1beta1
+kind: SchemaRegistry
+metadata:
+  name: schemaregistry
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.schemaRegistry.replicas }}
+  {{- include "cp.image" (dict "root" . "name" "cp-schema-registry") | nindent 2 }}
+  {{- include "cp.common" (dict "root" . "component" .Values.schemaRegistry) | nindent 2 }}
+  {{- with .Values.platform.externalHost }}
+  externalAccess:
+    type: nodePort
+    nodePort:
+      host: {{ . }}
+      nodePortOffset: {{ $.Values.schemaRegistry.externalNodePort }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,59 @@
+{{- if and .Values.flink.enabled .Values.flink.sql.enabled .Values.kafka.enabled .Values.schemaRegistry.enabled }}
+{{- $env := include "cp.flinkEnvironment" . }}
+{{- $sql := .Values.flink.sql }}
+{{- $catalog := $sql.catalog | default .Release.Namespace }}
+# Shared Flink SQL in CMF: Kafka catalog (Schema Registry), Kafka database and a compute pool.
+# Submit statements as FlinkStatement CRs, via the CMF REST API or the confluent CLI.
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkKafkaCatalog
+metadata:
+  name: {{ $catalog }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  flinkEnvironment: {{ $env }}
+  cmfRestClassRef:
+    name: cmf
+  srInstance:
+    connectionConfig:
+      schema.registry.url: {{ include "cp.url" (dict "root" . "name" "schemaregistry" "port" 8081) }}
+---
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkKafkaDatabase
+metadata:
+  name: {{ $sql.database }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  flinkEnvironment: {{ $env }}
+  cmfRestClassRef:
+    name: cmf
+  catalogRef:
+    name: {{ $catalog }}
+  ddlEnvironments: [{{ $env }}] # allow CREATE TABLE from this environment
+  kafkaCluster:
+    connectionConfig:
+      bootstrap.servers: kafka.{{ .Release.Namespace }}.svc.cluster.local:9071
+---
+{{- with $sql.computePool }}
+apiVersion: platform.confluent.io/v1beta1
+kind: FlinkComputePool
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  flinkEnvironment: {{ $env }}
+  cmfRestClassRef:
+    name: cmf
+  type: DEDICATED # every statement runs on its own JobManager/TaskManager with this spec
+  clusterSpec:
+    flinkVersion: {{ .flinkVersion }}
+    image: {{ .image }}
+    flinkConfiguration:
+      {{- toYaml .flinkConfiguration | nindent 6 }}
+    jobManager:
+      resource:
+        {{- toYaml .jobManager.resource | nindent 8 }}
+    taskManager:
+      resource:
+        {{- toYaml .taskManager.resource | nindent 8 }}
+{{- end }}
+{{- end }}
